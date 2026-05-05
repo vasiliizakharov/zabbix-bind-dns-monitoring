@@ -1,0 +1,118 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: 7df96b18c230490a9a0a9e2307226341
+      name: Templates/Network
+  templates:
+    - uuid: a7f1e2c1d3b44f1ea001d3a0c0a4b001
+      template: 'BIND9 by Zabbix agent'
+      name: 'BIND9 by Zabbix agent'
+      description: |
+        BIND9 (named) monitoring via statistics-channel JSON endpoint.
+        Author: Vasilii Zakharov <vasiliiazakharov@gmail.com>
+      groups:
+        - name: Templates/Network
+      macros:
+        - macro: '{$ZBX.BIND.STATS_URL}'
+          value: 'http://127.0.0.1:8053/json'
+        - macro: '{$ZBX.BIND.SERVFAIL.RATE.HIGH}'
+          value: '5'
+          description: 'SERVFAILs per minute'
+        - macro: '{$ZBX.BIND.HITRATE.LOW}'
+          value: '70'
+          description: 'Cache hit-rate floor, percent'
+      items:
+        - uuid: b4f1e2c1d3b44f1ea001d3a0c0a4b101
+          name: 'BIND: queries total'
+          key: bind.queries.total
+          delay: 60s
+          value_type: UNSIGNED
+          preprocessing:
+            - type: CHANGE_PER_SECOND
+              parameters:
+                - ''
+        - uuid: b4f1e2c1d3b44f1ea001d3a0c0a4b102
+          name: 'BIND: queries A (rate)'
+          key: bind.queries.IN.A
+          delay: 60s
+          value_type: FLOAT
+          preprocessing:
+            - type: CHANGE_PER_SECOND
+              parameters:
+                - ''
+        - uuid: b4f1e2c1d3b44f1ea001d3a0c0a4b103
+          name: 'BIND: queries AAAA (rate)'
+          key: bind.queries.IN.AAAA
+          delay: 60s
+          value_type: FLOAT
+          preprocessing:
+            - type: CHANGE_PER_SECOND
+              parameters:
+                - ''
+        - uuid: b4f1e2c1d3b44f1ea001d3a0c0a4b104
+          name: 'BIND: queries MX (rate)'
+          key: bind.queries.IN.MX
+          delay: 60s
+          value_type: FLOAT
+          preprocessing:
+            - type: CHANGE_PER_SECOND
+              parameters:
+                - ''
+        - uuid: b4f1e2c1d3b44f1ea001d3a0c0a4b105
+          name: 'BIND: queries TXT (rate)'
+          key: bind.queries.IN.TXT
+          delay: 60s
+          value_type: FLOAT
+          preprocessing:
+            - type: CHANGE_PER_SECOND
+              parameters:
+                - ''
+        - uuid: b4f1e2c1d3b44f1ea001d3a0c0a4b106
+          name: 'BIND: NOERROR responses'
+          key: bind.responses.NOERROR
+          delay: 60s
+          value_type: UNSIGNED
+        - uuid: b4f1e2c1d3b44f1ea001d3a0c0a4b107
+          name: 'BIND: NXDOMAIN responses'
+          key: bind.responses.NXDOMAIN
+          delay: 60s
+          value_type: UNSIGNED
+        - uuid: b4f1e2c1d3b44f1ea001d3a0c0a4b108
+          name: 'BIND: SERVFAIL responses (rate)'
+          key: bind.responses.SERVFAIL
+          delay: 60s
+          value_type: FLOAT
+          preprocessing:
+            - type: CHANGE_PER_SECOND
+              parameters:
+                - ''
+        - uuid: b4f1e2c1d3b44f1ea001d3a0c0a4b109
+          name: 'BIND: cache hit rate'
+          key: bind.cache.hitrate
+          delay: 60s
+          value_type: FLOAT
+          units: '%'
+      discovery_rules:
+        - uuid: e4f1e2c1d3b44f1ea001d3a0c0a4e001
+          name: 'BIND zone discovery'
+          key: bind.zone.discovery
+          delay: 1h
+          item_prototypes:
+            - uuid: f4f1e2c1d3b44f1ea001d3a0c0a4f001
+              name: 'BIND: zone {#ZONE} serial'
+              key: 'bind.zone.serial[{#ZONE}]'
+              delay: 5m
+              value_type: UNSIGNED
+      triggers:
+        - uuid: c4f1e2c1d3b44f1ea001d3a0c0a4c001
+          expression: 'avg(/BIND9 by Zabbix agent/bind.responses.SERVFAIL,5m)*60>{$ZBX.BIND.SERVFAIL.RATE.HIGH}'
+          name: 'BIND: SERVFAIL rate is high'
+          priority: WARNING
+        - uuid: c4f1e2c1d3b44f1ea001d3a0c0a4c002
+          expression: 'last(/BIND9 by Zabbix agent/bind.cache.hitrate)<{$ZBX.BIND.HITRATE.LOW}'
+          name: 'BIND: cache hit rate is low'
+          priority: INFO
+        - uuid: c4f1e2c1d3b44f1ea001d3a0c0a4c003
+          expression: 'nodata(/BIND9 by Zabbix agent/bind.queries.total,5m)=1'
+          name: 'BIND: statistics-channel unreachable'
+          priority: HIGH

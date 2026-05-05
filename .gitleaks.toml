@@ -1,0 +1,8 @@
+# Zabbix template YAML exports embed UUIDs (32 hex chars) for every
+# item/trigger/template — these are not secrets, they are dedup keys for
+# import operations. Allowlist them so generic-api-key entropy rule
+# does not trigger.
+[[allowlists]]
+description = "Zabbix import UUIDs in template YAML (not secrets)"
+paths = [".*template/.*\\.ya?ml$"]
+regexes = ["^[a-f0-9]{32}$"]
